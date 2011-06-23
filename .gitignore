@@ -1,0 +1,10 @@
+/target
+/test
+
+# Eclipse
+/.classpath
+/.project
+/.settings
+
+# OSX
+.DS_Store
