@@ -107,7 +107,14 @@ public enum BlockType {
 	HellstoneBrick(76),
 	Hellforge(77, true),
 	ClayPot(78, true),
-	Bed(79, true);
+	Bed(79, true),
+
+	Cactus(80),
+	Coral(81, true),
+	AlchemyPlant1(82, true),
+	AlchemyPlant2(83, true),
+	AlchemyPlant3(84, true),
+	Tombstone(85, true);
 
 	private static final BlockType[] blockTable;
 	static {

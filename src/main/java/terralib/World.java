@@ -43,7 +43,7 @@ import com.google.common.io.LittleEndianDataOutputStream;
 
 public final class World {
 
-	private final int VERSION = 4;
+	private final int VERSION = 12;
 
 	private final ByteBuffer buffer;
 	private final DataInput input;
