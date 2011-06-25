@@ -46,7 +46,6 @@ public final class World {
 	private final int VERSION = 12;
 
 	private final ByteBuffer buffer;
-	private final DataInput input;
 
 	private final WorldInfo info;
 
@@ -59,7 +58,7 @@ public final class World {
 
 	public World(File file) throws IOException {
 		buffer = Files.map(file);
-		input = new LittleEndianDataInputStream(new ByteBufferInputStream(buffer));
+		DataInput input = new LittleEndianDataInputStream(new ByteBufferInputStream(buffer));
 
 		// Header
 		if (input.readInt() != VERSION)
@@ -105,11 +104,16 @@ public final class World {
 
 			npcs.put(pos, npc);
 		}
+
+		buffer.rewind();
 	}
 
 	public final void write(File file) throws IOException {
 		OutputStream stream = new BufferedOutputStream(new FileOutputStream(file));
 		DataOutput output = new LittleEndianDataOutputStream(stream);
+
+		ByteBuffer buffer = this.buffer.duplicate();
+		DataInput input = new LittleEndianDataInputStream(new ByteBufferInputStream(buffer));
 
 		// Header
 		output.writeInt(VERSION);
@@ -205,6 +209,9 @@ public final class World {
 			return modified;
 
 		try {
+			ByteBuffer buffer = this.buffer.duplicate();
+			DataInput input = new LittleEndianDataInputStream(new ByteBufferInputStream(buffer));
+
 			buffer.position(tileBufferPos[position.getX()]);
 			skipTiles(input, position.getY());
 			return new Tile(input);
@@ -223,6 +230,9 @@ public final class World {
 		checkNotNull(rect);
 
 		try {
+			ByteBuffer buffer = this.buffer.duplicate();
+			DataInput input = new LittleEndianDataInputStream(new ByteBufferInputStream(buffer));
+
 			Tile[] tileData = new Tile[rect.getWidth() * rect.getHeight()];
 			int i = 0;
 
