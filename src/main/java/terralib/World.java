@@ -220,8 +220,25 @@ public final class World {
 	}
 
 	public final TileGroup getTileGroup(Rectangle rect) {
-		// TODO
-		return null;
+		checkNotNull(rect);
+
+		try {
+			Tile[] tileData = new Tile[rect.getWidth() * rect.getHeight()];
+			int i = 0;
+
+			for (int x = rect.getLeft(); x < rect.getRight(); x++) {
+				buffer.position(tileBufferPos[x]);
+				skipTiles(input, rect.getTop());
+
+				for (int y = rect.getTop(); y < rect.getBottom(); y++) {
+					tileData[i++] = new Tile(input);
+				}
+			}
+
+			return new TileGroup(rect, tileData);
+		} catch (IOException e) {
+			throw new RuntimeException("Error reading tiles");
+		}
 	}
 
 	public final Map<Position, Chest> getChests() {

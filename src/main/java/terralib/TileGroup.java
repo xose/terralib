@@ -42,4 +42,10 @@ public final class TileGroup {
 
 		return tileData[inX * rect.getHeight() + inY];
 	}
+
+	public final Tile getTileRelative(Position pos) {
+		checkArgument(pos.getX() < rect.getWidth() && pos.getY() < rect.getHeight());
+
+		return tileData[pos.getX() * rect.getHeight() + pos.getY()];
+	}
 }
