@@ -48,4 +48,8 @@ public final class TileGroup {
 
 		return tileData[pos.getX() * rect.getHeight() + pos.getY()];
 	}
+
+	public final void updateTileUV() {
+		// TODO
+	}
 }

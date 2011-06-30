@@ -35,12 +35,16 @@ public final class MapInfo {
 			System.exit(1);
 		}
 
+		long init = System.currentTimeMillis();
 		World w = new World(new File(args[0]));
 		WorldInfo info = w.getInfo();
 
 		// Print map info
-		System.out.println("Loaded map: " + info.getName() + " (ID: " + info.getID() + ")");
+		System.out.println("Loaded map: " + info.getName() + " (ID: " + info.getID() + ") in " + (System.currentTimeMillis() - init)/1000.f + " seconds");
+		System.out.println("Bounds: " + info.getBounds().toString());
 		System.out.println("Spawn: " + info.getSpawn());
+		System.out.println("Ground: " + info.getGroundLevel());
+		System.out.println("Rock: " + info.getRockLevel());
 
 		// Print Chests
 		for (Entry<Position, Chest> entry : w.getChests().entrySet()) {
@@ -57,8 +61,7 @@ public final class MapInfo {
 		// Print NPCs
 		System.out.println("-- NPCs --");
 		for (Entry<Position, NPC> entry : w.getNpcs().entrySet()) {
-			System.out.println(entry.getValue().getName() + ": " + entry.getKey().toString());
+			System.out.println(entry.getValue().getType().toString() + ": " + entry.getKey().toString());
 		}
 	}
-
 }

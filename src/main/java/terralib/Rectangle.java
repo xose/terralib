@@ -17,6 +17,7 @@
 package terralib;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -24,16 +25,19 @@ import java.io.IOException;
 
 import com.google.common.base.Objects;
 
-public final class Rectangle {
+public final class Rectangle extends AbstractDataObject {
 
-	private final int left;
-	private final int right;
-	private final int top;
-	private final int bottom;
+	private int left;
+	private int right;
+	private int top;
+	private int bottom;
+
+	public Rectangle() {
+	}
 
 	public Rectangle(int left, int right, int top, int bottom) {
-		checkArgument(left < right);
-		checkArgument(top < bottom);
+		checkArgument(left >= 0 && left < right);
+		checkArgument(top >= 0 && top < bottom);
 		this.left = left;
 		this.right = right;
 		this.top = top;
@@ -41,17 +45,25 @@ public final class Rectangle {
 	}
 
 	protected Rectangle(DataInput input) throws IOException {
+		parse(input);
+	}
+
+	@Override
+	protected final void parse(DataInput input) throws IOException {
 		left = input.readInt();
 		right = input.readInt();
-		if (left > right)
-			throw new MapParsingException(this, "left > right");
-
 		top = input.readInt();
 		bottom = input.readInt();
+
+		if (left < 0 || top < 0)
+			throw new MapParsingException(this, "< 0");
+		if (left > right)
+			throw new MapParsingException(this, "left > right");
 		if (top > bottom)
 			throw new MapParsingException(this, "top > bottom");
 	}
 
+	@Override
 	protected final void write(DataOutput output) throws IOException {
 		output.writeInt(left);
 		output.writeInt(right);
@@ -60,11 +72,24 @@ public final class Rectangle {
 	}
 
 	public final boolean contains(Position position) {
-		return left <= position.getX() && position.getX() <= right && bottom <= position.getY() && position.getY() <= top;
+		checkNotNull(position);
+
+		return left <= position.getX() && position.getX() < right && top <= position.getY() && position.getY() < bottom;
 	}
 
 	public final boolean contains(Rectangle rect) {
+		checkNotNull(rect);
+
 		return left <= rect.left && rect.right <= right && bottom <= rect.bottom && rect.top <= top;
+	}
+
+	public final Rectangle intersects(Rectangle rect) {
+		checkNotNull(rect);
+
+		if (rect.left > right || rect.right < left || rect.top > bottom || rect.bottom < top)
+			return null;
+
+		return new Rectangle(Math.max(left, rect.left), Math.min(right, rect.right), Math.max(top, rect.top), Math.min(bottom, rect.bottom));
 	}
 
 	public final int getLeft() {

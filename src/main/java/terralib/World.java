@@ -27,7 +27,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
@@ -41,15 +43,15 @@ import com.google.common.io.Files;
 import com.google.common.io.LittleEndianDataInputStream;
 import com.google.common.io.LittleEndianDataOutputStream;
 
-public final class World {
+public final class World extends AbstractDataObject {
 
 	private final int VERSION = 12;
 
 	private final ByteBuffer buffer;
 
-	private final WorldInfo info;
+	private final WorldInfo info = new WorldInfo();
 
-	private final int[] tileBufferPos;
+	private final List<Integer> tileBufferPos = new ArrayList<Integer>();
 	private final SortedMap<Integer, Tile> modifiedTiles = new TreeMap<Integer, Tile>();
 
 	private final Map<Position, Chest> chests = new HashMap<Position, Chest>();
@@ -58,22 +60,38 @@ public final class World {
 
 	public World(File file) throws IOException {
 		buffer = Files.map(file);
-		DataInput input = new LittleEndianDataInputStream(new ByteBufferInputStream(buffer));
 
+		parse(new LittleEndianDataInputStream(new ByteBufferInputStream(buffer)));
+
+		buffer.rewind();
+	}
+
+	public final void write(File file) throws IOException {
+		OutputStream stream = new BufferedOutputStream(new FileOutputStream(file));
+
+		write(new LittleEndianDataOutputStream(stream));
+
+		stream.flush();
+		stream.close();
+	}
+
+	@Override
+	protected void parse(DataInput input) throws IOException {
 		// Header
 		if (input.readInt() != VERSION)
 			throw new IOException("World version mismatch");
 
-		info = new WorldInfo(input);
+		info.parse(input);
 
 		// Tiles
-		tileBufferPos = new int[info.getWidth()];
+		tileBufferPos.clear();
 		for (int i = 0; i < info.getWidth(); i++) {
-			tileBufferPos[i] = buffer.position();
+			tileBufferPos.add(i, Integer.valueOf(buffer.position()));
 			skipTiles(input, info.getHeight());
 		}
 
 		// Chests
+		chests.clear();
 		for (int i = 0; i < 1000; i++) {
 			if (input.readBoolean() == false) {
 				continue;
@@ -86,6 +104,7 @@ public final class World {
 		}
 
 		// Signs
+		signs.clear();
 		for (int i = 0; i < 1000; i++) {
 			if (input.readBoolean() == false) {
 				continue;
@@ -98,20 +117,17 @@ public final class World {
 		}
 
 		// NPCs
+		npcs.clear();
 		while (input.readBoolean() == true) {
 			NPC npc = new NPC(input);
 			Position pos = new Position(input);
 
 			npcs.put(pos, npc);
 		}
-
-		buffer.rewind();
 	}
 
-	public final void write(File file) throws IOException {
-		OutputStream stream = new BufferedOutputStream(new FileOutputStream(file));
-		DataOutput output = new LittleEndianDataOutputStream(stream);
-
+	@Override
+	protected void write(DataOutput output) throws IOException {
 		ByteBuffer buffer = this.buffer.duplicate();
 		DataInput input = new LittleEndianDataInputStream(new ByteBufferInputStream(buffer));
 
@@ -120,8 +136,9 @@ public final class World {
 		info.write(output);
 
 		// Tiles
-		buffer.position(tileBufferPos[0]); // Reset buffer
+		buffer.position(tileBufferPos.get(0).intValue()); // Reset buffer
 
+		Tile tempTile = new Tile();
 		int nextMod = modifiedTiles.size() > 0 ? modifiedTiles.firstKey().intValue() : -1;
 		for (int i = 0; i < info.getHeight() * info.getWidth(); i++) {
 			if (nextMod == i) {
@@ -133,7 +150,8 @@ public final class World {
 				continue;
 			}
 
-			new Tile(input).write(output);
+			tempTile.parse(input);
+			tempTile.write(output);
 		}
 
 		// Chests
@@ -169,10 +187,6 @@ public final class World {
 		}
 
 		output.writeBoolean(false);
-
-		// Done
-		stream.flush();
-		stream.close();
 	}
 
 	private final void skipTiles(DataInput input, int numTiles) throws IOException {
@@ -212,7 +226,7 @@ public final class World {
 			ByteBuffer buffer = this.buffer.duplicate();
 			DataInput input = new LittleEndianDataInputStream(new ByteBufferInputStream(buffer));
 
-			buffer.position(tileBufferPos[position.getX()]);
+			buffer.position(tileBufferPos.get(position.getX()).intValue());
 			skipTiles(input, position.getY());
 			return new Tile(input);
 		} catch (IOException e) {
@@ -237,7 +251,7 @@ public final class World {
 			int i = 0;
 
 			for (int x = rect.getLeft(); x < rect.getRight(); x++) {
-				buffer.position(tileBufferPos[x]);
+				buffer.position(tileBufferPos.get(x).intValue());
 				skipTiles(input, rect.getTop());
 
 				for (int y = rect.getTop(); y < rect.getBottom(); y++) {

@@ -25,7 +25,7 @@ import java.io.IOException;
 import com.google.common.base.Objects;
 import com.google.common.base.Objects.ToStringHelper;
 
-public final class Chest {
+public final class Chest extends AbstractDataObject {
 
 	private final Stack[] items = new Stack[20];
 
@@ -36,11 +36,18 @@ public final class Chest {
 	}
 
 	protected Chest(DataInput input) throws IOException {
-		for (int i = 0; i < items.length; i++) {
-			items[i] = new Stack(input);
+		this();
+		parse(input);
+	}
+
+	@Override
+	protected final void parse(DataInput input) throws IOException {
+		for (Stack item : items) {
+			item.parse(input);
 		}
 	}
 
+	@Override
 	protected final void write(DataOutput output) throws IOException {
 		for (Stack item : items) {
 			item.write(output);

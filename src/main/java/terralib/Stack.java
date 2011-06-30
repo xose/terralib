@@ -28,13 +28,12 @@ import terralib.util.CSharpData;
 
 import com.google.common.base.Objects;
 
-public final class Stack {
+public final class Stack extends AbstractDataObject {
 
 	private ItemType itemType = ItemType.Nothing;
 	private int size;
 
 	public Stack() {
-		this(ItemType.Nothing, 0);
 	}
 
 	public Stack(ItemType item, int size) {
@@ -42,18 +41,24 @@ public final class Stack {
 		setSize(size);
 	}
 
-	protected Stack(DataInput input) throws IOException {
+	@Override
+	protected final void parse(DataInput input) throws IOException {
 		size = input.readUnsignedByte();
-
-		if (size > 0) {
-			String itemName = CSharpData.readString(input);
-			itemType = ItemType.fromString(itemName);
-
-			if (itemType == null)
-				throw new MapParsingException(this, "Unknown item (" + itemName + ")");
+		if (size == 0) {
+			itemType = ItemType.Nothing;
+			return;
 		}
+
+		itemType = ItemType.fromString(CSharpData.readString(input));
+
+		// FIXME: Generated chests have wrong stack sizes (!)
+		// if (size > itemType.getMaxStack())
+		// throw new MapParsingException(this, "Stack too big for item " +
+		// itemType.toString() + " (" + size + " > " + itemType.getMaxStack() +
+		// ")");
 	}
 
+	@Override
 	protected final void write(DataOutput output) throws IOException {
 		output.writeByte(size);
 		if (size > 0) {

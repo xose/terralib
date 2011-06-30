@@ -23,7 +23,7 @@ import java.io.IOException;
 // Mostly copy-pasted from Mono (System.IO.BinaryReader)
 // Simplified String conversion (no chunks)
 // Copyright (C) 2004 Novell, Inc (http://www.novell.com)
-public class CSharpData {
+public final class CSharpData {
 
 	private static final int read7BitInteger(DataInput input) throws IOException {
 		int ret = 0;

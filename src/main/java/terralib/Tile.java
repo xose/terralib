@@ -16,6 +16,9 @@
 
 package terralib;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -26,10 +29,11 @@ import terralib.enums.WallType;
 
 import com.google.common.base.Objects;
 
-public final class Tile {
+public final class Tile extends AbstractDataObject {
 
 	private BlockType blockType = BlockType.None;
-	private int u, v;
+	private int u = -1;
+	private int v = -1;
 
 	private WallType wallType = WallType.None;
 
@@ -42,27 +46,43 @@ public final class Tile {
 	}
 
 	protected Tile(DataInput input) throws IOException {
+		parse(input);
+	}
+
+	@Override
+	protected final void parse(DataInput input) throws IOException {
 		if (input.readBoolean()) {
 			blockType = BlockType.fromID(input.readUnsignedByte());
 
 			if (blockType.hasExtra()) {
 				u = input.readUnsignedShort();
 				v = input.readUnsignedShort();
+			} else {
+				u = v = -1;
 			}
+		} else {
+			blockType = BlockType.None;
+			u = v = -1;
 		}
 
 		sunlight = input.readBoolean();
 
 		if (input.readBoolean()) {
 			wallType = WallType.fromID(input.readUnsignedByte());
+		} else {
+			wallType = WallType.None;
 		}
 
 		if (input.readBoolean()) {
 			liquidLevel = input.readUnsignedByte();
 			liquidType = input.readBoolean() ? LiquidType.Lava : LiquidType.Water;
+		} else {
+			liquidLevel = 0;
+			liquidType = LiquidType.None;
 		}
 	}
 
+	@Override
 	protected final void write(DataOutput output) throws IOException {
 		output.writeBoolean(blockType != BlockType.None);
 		if (blockType != BlockType.None) {
@@ -88,12 +108,19 @@ public final class Tile {
 		}
 	}
 
+	public final void updateTileUV(Tile N, Tile NE, Tile E, Tile SE, Tile S, Tile SW, Tile W, Tile NW) {
+		if (blockType.hasExtra())
+			return;
+
+		// TODO
+	}
+
 	public final BlockType getBlockType() {
 		return blockType;
 	}
 
 	public final void setBlockType(BlockType blockType) {
-		this.blockType = blockType;
+		this.blockType = checkNotNull(blockType);
 	}
 
 	public final int getU() {
@@ -117,7 +144,7 @@ public final class Tile {
 	}
 
 	public final void setWallType(WallType wallType) {
-		this.wallType = wallType;
+		this.wallType = checkNotNull(wallType);
 	}
 
 	public final LiquidType getLiquidType() {
@@ -125,7 +152,11 @@ public final class Tile {
 	}
 
 	public final void setLiquidType(LiquidType liquidType) {
-		this.liquidType = liquidType;
+		this.liquidType = checkNotNull(liquidType);
+
+		if (liquidType == LiquidType.None) {
+			liquidLevel = 0;
+		}
 	}
 
 	public final int getLiquidLevel() {
@@ -133,6 +164,7 @@ public final class Tile {
 	}
 
 	public final void setLiquidLevel(int liquidLevel) {
+		checkArgument(liquidLevel >= 0 && liquidLevel <= 256);
 		this.liquidLevel = liquidLevel;
 	}
 

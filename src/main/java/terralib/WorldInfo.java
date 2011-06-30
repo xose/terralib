@@ -16,6 +16,7 @@
 
 package terralib;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.DataInput;
@@ -26,25 +27,25 @@ import terralib.util.CSharpData;
 
 import com.google.common.base.Objects;
 
-public final class WorldInfo {
+public final class WorldInfo extends AbstractDataObject {
 
-	private String name;
+	private String name = "";
 	private int id;
 
-	private Rectangle bounds;
+	private Rectangle bounds = new Rectangle();
 	private int height;
 	private int width;
-	private Position spawn;
+	private Position spawn = new Position();
 
-	private double groundLevel;
-	private double rockLevel;
+	private int groundLevel;
+	private int rockLevel;
 	private double time;
 
 	private boolean night;
 	private int moon;
 	private boolean bloodMoon;
 
-	private Position dungeon;
+	private Position dungeon = new Position();
 
 	private boolean boss1;
 	private boolean boss2;
@@ -59,24 +60,39 @@ public final class WorldInfo {
 	private int goblinType;
 	private double goblinPos;
 
+	protected WorldInfo() {
+	}
+
 	protected WorldInfo(DataInput input) throws IOException {
+		parse(input);
+	}
+
+	@Override
+	protected final void parse(DataInput input) throws IOException {
 		name = CSharpData.readString(input);
 		id = input.readInt();
 
-		bounds = new Rectangle(input);
+		bounds.parse(input);
 		height = input.readInt();
 		width = input.readInt();
-		spawn = new Position(input);
+		if (height*16 != bounds.getHeight() || width*16 != bounds.getWidth())
+			throw new MapParsingException(this, "Height/Width mismatch");
 
-		groundLevel = input.readDouble();
-		rockLevel = input.readDouble();
+		spawn.parse(input);
+		if (!bounds.contains(spawn))
+			throw new MapParsingException(this, "Spawn out of bounds");
+
+		groundLevel = (int) input.readDouble();
+		rockLevel = (int) input.readDouble();
 		time = input.readDouble();
 
 		night = input.readBoolean();
 		moon = input.readInt();
 		bloodMoon = input.readBoolean();
 
-		dungeon = new Position(input);
+		dungeon.parse(input);
+		if (!bounds.contains(dungeon))
+			throw new MapParsingException(this, "Dungeon out of bounds");
 
 		boss1 = input.readBoolean();
 		boss2 = input.readBoolean();
@@ -92,6 +108,7 @@ public final class WorldInfo {
 		goblinPos = input.readDouble();
 	}
 
+	@Override
 	protected final void write(DataOutput output) throws IOException {
 		CSharpData.writeString(output, name);
 		output.writeInt(id);
@@ -154,6 +171,7 @@ public final class WorldInfo {
 	}
 
 	public final void setHeight(int height) {
+		checkArgument(height > 0);
 		this.height = height;
 	}
 
@@ -162,6 +180,7 @@ public final class WorldInfo {
 	}
 
 	public final void setWidth(int width) {
+		checkArgument(width > 0);
 		this.width = width;
 	}
 
@@ -173,19 +192,21 @@ public final class WorldInfo {
 		this.spawn = checkNotNull(spawn);
 	}
 
-	public final double getGroundLevel() {
+	public final int getGroundLevel() {
 		return groundLevel;
 	}
 
-	public final void setGroundLevel(double groundLevel) {
+	public final void setGroundLevel(int groundLevel) {
+		checkArgument(groundLevel > 0);
 		this.groundLevel = groundLevel;
 	}
 
-	public final double getRockLevel() {
+	public final int getRockLevel() {
 		return rockLevel;
 	}
 
-	public final void setRockLevel(double rockLevel) {
+	public final void setRockLevel(int rockLevel) {
+		checkArgument(rockLevel > 0);
 		this.rockLevel = rockLevel;
 	}
 
@@ -226,7 +247,7 @@ public final class WorldInfo {
 	}
 
 	public final void setDungeon(Position dungeon) {
-		this.dungeon = dungeon;
+		this.dungeon = checkNotNull(dungeon);
 	}
 
 	public final boolean isBoss1() {
@@ -274,6 +295,7 @@ public final class WorldInfo {
 	}
 
 	public final void setShadowOrbs(int shadowOrbs) {
+		checkArgument(shadowOrbs > 0);
 		this.shadowOrbs = shadowOrbs;
 	}
 

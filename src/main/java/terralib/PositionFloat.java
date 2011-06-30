@@ -24,10 +24,13 @@ import java.io.IOException;
 
 import com.google.common.base.Objects;
 
-public final class PositionFloat {
+public final class PositionFloat extends AbstractDataObject {
 
-	private final float x;
-	private final float y;
+	private float x;
+	private float y;
+
+	public PositionFloat() {
+	}
 
 	public PositionFloat(float x, float y) {
 		checkArgument(x >= 0 && y >= 0);
@@ -36,6 +39,11 @@ public final class PositionFloat {
 	}
 
 	protected PositionFloat(DataInput input) throws IOException {
+		parse(input);
+	}
+
+	@Override
+	protected final void parse(DataInput input) throws IOException {
 		x = input.readFloat();
 		y = input.readFloat();
 
@@ -43,6 +51,7 @@ public final class PositionFloat {
 			throw new MapParsingException(this, "< 0");
 	}
 
+	@Override
 	protected final void write(DataOutput output) throws IOException {
 		output.writeFloat(x);
 		output.writeFloat(y);

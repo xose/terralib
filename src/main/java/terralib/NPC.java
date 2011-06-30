@@ -16,47 +16,56 @@
 
 package terralib;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import terralib.enums.NpcType;
 import terralib.util.CSharpData;
 
 import com.google.common.base.Objects;
 
-public final class NPC {
+public final class NPC extends AbstractDataObject {
 
-	private String name;
-	private PositionFloat position;
-	private boolean homeless;
+	private NpcType type = NpcType.Guide;
+	private PositionFloat position = new PositionFloat();
+	private boolean home;
 
-	public NPC(String name, PositionFloat position, boolean homeless) {
-		this.name = name;
+	public NPC() {
+	}
+
+	public NPC(NpcType type, PositionFloat position, boolean home) {
+		this.type = type;
 		this.position = position;
-		this.homeless = homeless;
+		this.home = home;
 	}
 
 	protected NPC(DataInput input) throws IOException {
-		name = CSharpData.readString(input);
-		position = new PositionFloat(input);
-		homeless = input.readBoolean();
+		parse(input);
 	}
 
+	@Override
+	protected final void parse(DataInput input) throws IOException {
+		type = NpcType.fromString(CSharpData.readString(input));
+		position.parse(input);
+		home = !input.readBoolean();
+	}
+
+	@Override
 	protected final void write(DataOutput output) throws IOException {
-		CSharpData.writeString(output, name);
+		CSharpData.writeString(output, type.toString());
 		position.write(output);
-		output.writeBoolean(homeless);
+		output.writeBoolean(!home);
 	}
 
-	public final String getName() {
-		return name;
+	public final NpcType getType() {
+		return type;
 	}
 
-	public final void setName(String name) {
-		checkArgument(name != null);
-		this.name = name;
+	public final void setType(NpcType type) {
+		this.type = checkNotNull(type);
 	}
 
 	public final PositionFloat getPosition() {
@@ -64,20 +73,19 @@ public final class NPC {
 	}
 
 	public final void setPosition(PositionFloat position) {
-		checkArgument(position != null);
-		this.position = position;
+		this.position = checkNotNull(position);
 	}
 
-	public final boolean isHomeless() {
-		return homeless;
+	public final boolean hasHome() {
+		return home;
 	}
 
-	public final void setHomeless(boolean homeless) {
-		this.homeless = homeless;
+	public final void setHome(boolean home) {
+		this.home = home;
 	}
 
 	@Override
 	public final String toString() {
-		return Objects.toStringHelper(this).add("Name", name).add("Position", position).add("Homeless", Boolean.valueOf(homeless)).toString();
+		return Objects.toStringHelper(this).add("Type", type).add("Position", position).add("Home", Boolean.valueOf(home)).toString();
 	}
 }

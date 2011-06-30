@@ -20,18 +20,57 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
-public final class ByteBufferInputStream extends InputStream {
+public class ByteBufferInputStream extends InputStream {
 
 	private final ByteBuffer byteBuffer;
 
 	public ByteBufferInputStream(ByteBuffer byteBuffer) {
 		super();
-
 		this.byteBuffer = byteBuffer;
 	}
 
 	@Override
-	public final int read() throws IOException {
+	public int available() {
+		return byteBuffer.remaining();
+	}
+
+	@Override
+	public int read() throws IOException {
+		if (!byteBuffer.hasRemaining())
+			return -1;
+
 		return byteBuffer.get() & 0xff;
+	}
+
+	@Override
+	public int read(byte[] b) throws IOException {
+		return read(b, 0, b.length);
+	}
+
+	@Override
+	public int read(byte b[], int off, int len) throws IOException {
+		if (!byteBuffer.hasRemaining())
+			return -1;
+
+		if (len > available()) {
+			len = available();
+		}
+
+		byteBuffer.get(b, off, len);
+
+		return len;
+	}
+
+	@Override
+	public long skip(long n) throws IOException {
+		if (n <= 0)
+			return 0;
+		else if (n > available()) {
+			n = available();
+		}
+
+		byteBuffer.position((int) (byteBuffer.position() + n));
+
+		return n;
 	}
 }
